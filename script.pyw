@@ -8,8 +8,7 @@ import sys
 import getpass
 import requests
 from ctypes import cast, POINTER
-from comtypes import CoInitialize, CLSCTX_ALL, cast, GUID
-import comtypes
+from comtypes import CLSCTX_ALL, cast, CoInitialize
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 # Constants
@@ -21,15 +20,14 @@ sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
 CoInitialize()
 
 def set_system_volume(sound_volume=sound_volume):
-    interface = None
     try:
         # Get the default audio device manager
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(
-            comtypes.GUID('{5CDF2C82-841E-4546-9722-0CF74078229A}'), CLSCTX_ALL, None)
+            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 
         # Convert the interface into an IAudioEndpointVolume object
-        volume = cast(interface, POINTER(comtypes.interfaces.IAudioEndpointVolume))
+        volume = cast(interface, POINTER(IAudioEndpointVolume))
 
         # Set the volume to maximum
         volume.SetMasterVolumeLevelScalar(sound_volume, None)
@@ -39,7 +37,7 @@ def set_system_volume(sound_volume=sound_volume):
         print("Error while setting volume:", str(e))
         return False
     finally:
-        if interface:
+        if 'interface' in locals():
             interface.Release()
 
 def download_mp3(url):
