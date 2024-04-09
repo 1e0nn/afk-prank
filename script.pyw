@@ -8,81 +8,87 @@ import sys
 import getpass
 import requests
 from ctypes import cast, POINTER
-from comtypes import CLSCTX_ALL
+from comtypes import CoInitialize, CLSCTX_ALL, cast, GUID
+import comtypes
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-
 
 # Constants
 PHOTO_FOLDER = f"C:\\Users\\{getpass.getuser()}\\Documents\\Captured_Photos"
 CAPTURE_COUNT_THRESHOLD = 3
-quit_program_key = pynput_keyboard.Key.shift_r #change 'page_up' to whatever key you want to use to quit the program
-sound_volume=0.70 # 0.0 signifie le volume minimum et 1.0 signifie le volume maximum
+quit_program_key = pynput_keyboard.Key.shift_r  # change 'page_up' to whatever key you want to use to quit the program
+sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
 
-def set_system_volume_to_max(sound_volume=sound_volume):
+CoInitialize()
+
+def set_system_volume(sound_volume=1.0):
+    interface = None
     try:
-        # Obtenir le gestionnaire de périphériques audio par défaut
+        # Get the default audio device manager
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(
-            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            comtypes.GUID('{5CDF2C82-841E-4546-9722-0CF74078229A}'), CLSCTX_ALL, None)
 
-        # Convertir l'interface en objet IAudioEndpointVolume
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
+        # Convert the interface into an IAudioEndpointVolume object
+        volume = cast(interface, POINTER(comtypes.interfaces.IAudioEndpointVolume))
 
-        # Régler le volume au maximum
-        volume.SetMasterVolumeLevelScalar(sound_volume, None)  
-        print("Volume système réglé à", round(sound_volume * 100), "%.")
+        # Set the volume to maximum
+        volume.SetMasterVolumeLevelScalar(sound_volume, None)
+        print("System volume set to", round(sound_volume * 100), "%.")
         return True
     except Exception as e:
-        print("Erreur lors du réglage du volume :", str(e))
+        print("Error while setting volume:", str(e))
         return False
+    finally:
+        if interface:
+            interface.Release()
 
 def download_mp3(url):
-
-    # Chemin complet du fichier téléchargé
-    filepath = f"C:\\Users\\{getpass.getuser()}\\Downloads\\sound_alert.mp3"
-
+    # Full path of the downloaded file
+    filepath = f"C:\\Users\\{getpass.getuser()}\\Music\\sound_alert.mp3"
+    if os.path.exists(filepath):
+        return filepath
     try:
-        # Téléchargement du fichier
+        # Download the file
         response = requests.get(url)
         if response.status_code == 200:
             with open(filepath, 'wb') as f:
                 f.write(response.content)
             return filepath
         else:
-            #print("Erreur lors du téléchargement : Code", response.status_code)
+            print("Error while downloading: Code", response.status_code)
             return None
     except Exception as e:
-        #print("Une erreur est survenue lors du téléchargement :", str(e))
+        print("An error occurred while downloading:", str(e))
         return None
 
 def find_windows_ding_sound():
-    # Chemin par défaut pour le son "Windows Ding"
+    # Default path for the "Windows Ding" sound
     default_sound_path = "C:\\Windows\\Media\\Windows Critical Stop.wav"
     if os.path.exists(default_sound_path):
         return default_sound_path
     else:
-        #print("Le son 'Windows Ding' n'a pas été trouvé.")
+        print("The 'Windows Ding' sound file was not found.")
         return None
 
-# Test de la fonction download_mp3
-mp3_path = download_mp3("https://cdn.pixabay.com/download/audio/2021/08/09/audio_1818162f91.mp3?filename=cartoon-scream-1-6835.mp3")
+# Test the download_mp3 function
+mp3_path = download_mp3("http://cdn.pixabay.com/download/audio/2021/08/09/audio_1818162f91.mp3?filename=cartoon-scream-1-6835.mp3")
 ding_sound_path = find_windows_ding_sound()
-
 
 if mp3_path:
     SOUND_FILE = mp3_path
-    set_system_volume_to_max()
-    print("Le son téléchargé sera utilisé :", mp3_path)
+    set_system_volume()
+    print("Downloaded sound will be used:", mp3_path)
 elif ding_sound_path:
     SOUND_FILE = ding_sound_path
-    set_system_volume_to_max()
-    print("Le son 'Windows Ding' sera utilisé :", ding_sound_path)
+    set_system_volume()
+    print("The 'Windows Ding' sound will be used:", ding_sound_path)
 else:
-    print("Impossible de trouver un son à jouer.")
+    print("Unable to find a sound to play.")
 
-sys.exit()
+
 # Initialize Pygame for playing sounds
 pygame.init()
+
 # Load the sound file
 pygame.mixer.music.load(SOUND_FILE)
 
@@ -103,6 +109,7 @@ else:
 
 # Counter for captures
 captures_count = 0
+
 
 # Flag variable to indicate if the program should exit
 exit_program = False
@@ -172,6 +179,7 @@ mouse_listener = mouse.Listener(on_click=on_mouse_event)
 keyboard_listener.start()
 mouse_listener.start()
 
+
 # Loop to keep the program running
 while not exit_program:
     time.sleep(1)  # Add a small pause to reduce CPU usage
@@ -182,7 +190,9 @@ mouse_listener.stop()
 keyboard_listener.join()
 mouse_listener.join()
 pygame.mixer.quit()
-#supprimer le son téléchargé
+
+
+# Remove the downloaded sound
 if mp3_path:
     os.remove(mp3_path)
 capture.release()  # Release the webcam resource
