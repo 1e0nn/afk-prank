@@ -1,3 +1,7 @@
+ ## Usage
+
+ Run it, it will open in hidden mode and when you are clicking or typing it will capture your face and make a noise as long as you had configured  `CAPTURE_COUNT_THRESHOLD` and after that, lockscreen and quit the program.
+ 
  ## Configuration
 
  - **Adjust Sound File Path:**
