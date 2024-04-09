@@ -15,6 +15,9 @@
 
  - **Set Quit Key:**
    - Modify the `quit_program_key` variable to set the key to quit the program (default = right shift).
+  
+ - **Set Volume level:**
+   - Modify the `sound_volume` variable to set the volume level desired (default = 100% ).
 
  ## Disclaimer
 
