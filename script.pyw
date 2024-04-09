@@ -15,12 +15,12 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 # Constants
 PHOTO_FOLDER = f"C:\\Users\\{getpass.getuser()}\\Documents\\Captured_Photos"
 CAPTURE_COUNT_THRESHOLD = 3
-quit_program_key = pynput_keyboard.Key.shift_r  # change 'page_up' to whatever key you want to use to quit the program
+quit_program_key = pynput_keyboard.Key.shift_r  # change 'shift_r' to whatever key you want to use to quit the program
 sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
 
 CoInitialize()
 
-def set_system_volume(sound_volume=1.0):
+def set_system_volume(sound_volume=sound_volume):
     interface = None
     try:
         # Get the default audio device manager
@@ -45,11 +45,9 @@ def set_system_volume(sound_volume=1.0):
 def download_mp3(url):
     # Full path of the downloaded file
     filepath = f"C:\\Users\\{getpass.getuser()}\\Music\\sound_alert.mp3"
-    if os.path.exists(filepath):
-        return filepath
     try:
         # Download the file
-        response = requests.get(url)
+        response = requests.get(url,verify=False)
         if response.status_code == 200:
             with open(filepath, 'wb') as f:
                 f.write(response.content)
