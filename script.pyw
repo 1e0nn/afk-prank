@@ -16,8 +16,9 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 PHOTO_FOLDER = f"C:\\Users\\{getpass.getuser()}\\Documents\\Captured_Photos"
 CAPTURE_COUNT_THRESHOLD = 3
 quit_program_key = pynput_keyboard.Key.shift_r #change 'page_up' to whatever key you want to use to quit the program
+sound_volume=0.70 # 0.0 signifie le volume minimum et 1.0 signifie le volume maximum
 
-def set_system_volume_to_max():
+def set_system_volume_to_max(sound_volume=sound_volume):
     try:
         # Obtenir le gestionnaire de périphériques audio par défaut
         devices = AudioUtilities.GetSpeakers()
@@ -28,8 +29,8 @@ def set_system_volume_to_max():
         volume = cast(interface, POINTER(IAudioEndpointVolume))
 
         # Régler le volume au maximum
-        volume.SetMasterVolumeLevel(-0.0, None)  # -0.0 signifie le volume maximum
-        print("Volume système réglé au maximum.")
+        volume.SetMasterVolumeLevelScalar(sound_volume, None)  
+        print("Volume système réglé à", round(sound_volume * 100), "%.")
         return True
     except Exception as e:
         print("Erreur lors du réglage du volume :", str(e))
@@ -79,6 +80,7 @@ elif ding_sound_path:
 else:
     print("Impossible de trouver un son à jouer.")
 
+sys.exit()
 # Initialize Pygame for playing sounds
 pygame.init()
 # Load the sound file
