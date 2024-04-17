@@ -16,6 +16,9 @@ PHOTO_FOLDER = f"C:\\Users\\{getpass.getuser()}\\Documents\\Captured_Photos"
 CAPTURE_COUNT_THRESHOLD = 3
 quit_program_key = pynput_keyboard.Key.shift_r  # change 'shift_r' to whatever key you want to use to quit the program
 sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
+# URL of the Canary token : Web bug / URL token
+url_canary_token = "http://canarytokens.com/traffic/...../contact.php"  
+    
 
 CoInitialize()
 
@@ -58,10 +61,7 @@ def download_mp3(url):
         return None
 
 # Function to trigger a Canary token
-def trigger_canary_token():
-
-    # URL of the Canary token : Web bug / URL token
-    url = "http://canarytokens.com/traffic/...../contact.php"
+def trigger_canary_token(url):
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -157,13 +157,13 @@ def perform_actions():
     try:
         if webcam_available is False:
             pygame.mixer.music.play()
-            trigger_canary_token()
+            trigger_canary_token(url_canary_token)
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
         else:
             pygame.mixer.music.play()
-            trigger_canary_token()
+            trigger_canary_token(url_canary_token)
             play_sound_and_capture_photo()
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
