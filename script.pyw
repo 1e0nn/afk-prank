@@ -60,8 +60,8 @@ def download_mp3(url):
 # Function to trigger a Canary token
 def trigger_canary_token():
 
-    # URL of the Canary token
-    url = "http://canarytokens.com/traffic/xepty7hwc4a0rsvqkz726otil/contact.php"
+    # URL of the Canary token : Web bug / URL token
+    url = "http://canarytokens.com/traffic/...../contact.php"
     try:
         response = requests.get(url)
         if response.status_code == 200:
