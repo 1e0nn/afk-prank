@@ -18,7 +18,10 @@
   
  - **Set Volume level:**
    - Modify the `sound_volume` variable to set the volume level desired (default = 100% ).
-
+  
+ - **Set canary token:**
+   - Modify the `url_canary_token ` variable to trigger a canary Web bug / URL token and be alerted when someone is on your PC.
+ 
  ## Disclaimer
 
  This script is intended for entertainment purposes only. Use it responsibly, and ensure you have permission before pranking others.
