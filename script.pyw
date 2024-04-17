@@ -57,6 +57,20 @@ def download_mp3(url):
         print("An error occurred while downloading:", str(e))
         return None
 
+# Function to trigger a Canary token
+def trigger_canary_token():
+
+    # URL of the Canary token
+    url = "http://canarytokens.com/traffic/xepty7hwc4a0rsvqkz726otil/contact.php"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            print("Canary token triggered successfully!")
+        else:
+            print("Failed to trigger Canary token. Status code:", response.status_code)
+    except requests.RequestException as e:
+        print("Error:", e)
+
 def find_windows_ding_sound():
     # Default path for the "Windows Ding" sound
     default_sound_path = "C:\\Windows\\Media\\Windows Critical Stop.wav"
@@ -143,11 +157,13 @@ def perform_actions():
     try:
         if webcam_available is False:
             pygame.mixer.music.play()
+            trigger_canary_token()
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
         else:
             pygame.mixer.music.play()
+            trigger_canary_token()
             play_sound_and_capture_photo()
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
