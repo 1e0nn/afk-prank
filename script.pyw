@@ -43,7 +43,21 @@ def set_system_volume(sound_volume=sound_volume):
         if 'interface' in locals():
             interface.Release()
 
+
+def test_internet_co():
+    try:
+        subprocess.check_output(["ping", "-n", "1", "8.8.8.8"])
+        #print("Internet connection is available.")
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
 def download_mp3(url):
+
+    if test_internet_co() == False:
+        print("No internet connection. Cannot download the sound file.")
+        return None
+    
     # Full path of the downloaded file
     filepath = f"C:\\Users\\{getpass.getuser()}\\Music\\sound_alert.mp3"
     try:
@@ -62,6 +76,11 @@ def download_mp3(url):
 
 # Function to trigger a Canary token
 def trigger_canary_token(url):
+
+    if test_internet_co() == False:
+        print("No internet connection. Cannot trigger canary token.")
+        return None
+
     try:
         response = requests.get(url)
         if response.status_code == 200:
