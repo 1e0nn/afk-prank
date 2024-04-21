@@ -27,12 +27,12 @@ quit_program_key = pynput_keyboard.Key.shift_r  # change 'shift_r' to whatever k
 sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
 
 # URL of the Canary token : Web bug / URL token
-url_canary_token = "http://canarytokens.com/stuff/about/feedback/xcnvjdnvndvnoevo/post.jsp"  
+url_canary_token = "http://canarytokens.com/stuff/about/feedback/jdcpvcjnvcjnrvi/post.jsp"  
 
 # Email configuration
 receiver_email = 'x@gmail.com'
 sender_email = 'x@gmail.com'
-app_password = 'cqujeideifezxlcee'
+app_password = 'fqekfforjgiurbgli'
 subject = "Someone is on your computer"
 body = "ALERT !!! \nSomeone is on your computer. Please check it out the file below \n"
     
@@ -45,25 +45,29 @@ def set_system_volume(sound_volume=sound_volume):
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(
             IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        
 
-        # Convert the interface into an IAudioEndpointVolume object
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
+         # Add a check to ensure the interface is not None
+        if interface is not None:
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            # Set the volume
+            volume.SetMasterVolumeLevelScalar(sound_volume, None)
+            print("System volume set to", round(sound_volume * 100), "%.")
+            return True
+        else:
+            print("Interface cannot be found")
 
-        # Set the volume to maximum
-        volume.SetMasterVolumeLevelScalar(sound_volume, None)
-        print("System volume set to", round(sound_volume * 100), "%.")
-        return True
     except Exception as e:
         print("Error while setting volume:", str(e))
         return False
     finally:
         if 'interface' in locals():
             interface.Release()
-
+            del interface
 
 def test_internet_connection():
     try:
-        socket.create_connection(("www.google.com", 80), timeout=2)
+        socket.create_connection(("www.google.com", 80), timeout=1)
         # got internet
         return True
     except OSError:
@@ -114,7 +118,7 @@ def trigger_canary_token(url, co_int):
 def connect_to_smtp(sender_email, app_password, co_int):
 
     if co_int == False:
-        print("No internet connection. Cannot send mail.")
+        #print("No internet connection. Cannot send mail.")
         return None
     
     # SMTP parameters
@@ -159,7 +163,7 @@ def send_email(server, receiver_email, sender_mail, app_password, subject, body,
 
     # sending e-mail
     server.send_message(message)
-    print("E-mail envoyé avec succès!")
+    print("E-mail sucessfully send!")
 
 def find_windows_ding_sound():
     # Default path for the "Windows Ding" sound
@@ -218,10 +222,13 @@ exit_program = False
 def on_key_press(key):
     try:
         if key == quit_program_key:
+            print('Exit key pressed, quitting program...')
             quit_program()
         else:
+            #print("a touch was pressed")
             perform_actions()
-    except AttributeError:
+    except AttributeError as a:
+        print("exception from key press : ", a)
         pass
 
 # Function to play the sound and capture a photo with the webcam
@@ -239,8 +246,15 @@ def play_sound_and_capture_photo():
 
 # Callback function when a mouse button is clicked
 def on_mouse_event(x, y, button, pressed):
-    if pressed and button in [mouse.Button.left, mouse.Button.right]:
-        perform_actions()
+    try:
+        if pressed and button in [mouse.Button.left, mouse.Button.right, mouse.Button.unknown, mouse.Button.middle]:
+            #print("Mouse pressed")
+            perform_actions()
+        elif pressed:
+            perform_actions()
+            print(f" An unrocognized touch was pressed : {button}")
+    except AttributeError as a:
+        print(f"exception form mouse event : {a}")
 
 # Additional function for actions
 def perform_actions():
@@ -253,7 +267,7 @@ def perform_actions():
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
         else:
-            # Démarrage de l'envoi d'e-mail en arrière-plan
+            # background mail sending
             photo_path = play_sound_and_capture_photo()
             background_thread = threading.Thread(target=send_email, args=(server, receiver_email, sender_email, app_password, subject, body, photo_path, co_int))
             background_thread.start()
@@ -262,7 +276,8 @@ def perform_actions():
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
-    except AttributeError:
+    except AttributeError as a:
+        print(f"An error occurred while performing actions : {a}")
         pass
 
 # Function to lock the screen
@@ -280,7 +295,7 @@ def quit_program():
     exit_program = True
 
 # Register the callback functions
-server=connect_to_smtp(sender_email, app_password, co_int )
+server = connect_to_smtp(sender_email, app_password, co_int )
 keyboard_listener = pynput_keyboard.Listener(on_press=on_key_press)
 mouse_listener = mouse.Listener(on_click=on_mouse_event)
 keyboard_listener.start()
@@ -307,4 +322,4 @@ if co_int:
 if mp3_path:
     os.remove(mp3_path)
 
-sys.exit()
+sys.exit("End of program")
