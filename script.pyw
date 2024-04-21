@@ -1,3 +1,4 @@
+
 import time
 import pygame
 from pynput import mouse, keyboard as pynput_keyboard
@@ -10,14 +11,30 @@ import requests
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL, cast, CoInitialize
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import threading
+import socket
+
 
 # Constants
 PHOTO_FOLDER = f"C:\\Users\\{getpass.getuser()}\\Documents\\Captured_Photos"
 CAPTURE_COUNT_THRESHOLD = 3
 quit_program_key = pynput_keyboard.Key.shift_r  # change 'shift_r' to whatever key you want to use to quit the program
 sound_volume = 1.0  # 0.0 means minimum volume and 1.0 means maximum volume
+
 # URL of the Canary token : Web bug / URL token
-url_canary_token = "http://canarytokens.com/traffic/...../contact.php"  
+url_canary_token = "http://canarytokens.com/stuff/about/feedback/xcnvjdnvndvnoevo/post.jsp"  
+
+# Email configuration
+receiver_email = 'x@gmail.com'
+sender_email = 'x@gmail.com'
+app_password = 'cqujeideifezxlcee'
+subject = "Someone is on your computer"
+body = "ALERT !!! \nSomeone is on your computer. Please check it out the file below \n"
     
 
 CoInitialize()
@@ -44,17 +61,21 @@ def set_system_volume(sound_volume=sound_volume):
             interface.Release()
 
 
-def test_internet_co():
+def test_internet_connection():
     try:
-        subprocess.check_output(["ping", "-n", "1", "8.8.8.8"])
-        #print("Internet connection is available.")
+        socket.create_connection(("www.google.com", 80), timeout=2)
+        # got internet
         return True
-    except subprocess.CalledProcessError:
+    except OSError:
+        # no internet
         return False
 
-def download_mp3(url):
 
-    if test_internet_co() == False:
+co_int= test_internet_connection()
+
+def download_mp3(url,co_int):
+
+    if co_int == False:
         print("No internet connection. Cannot download the sound file.")
         return None
     
@@ -75,9 +96,9 @@ def download_mp3(url):
         return None
 
 # Function to trigger a Canary token
-def trigger_canary_token(url):
+def trigger_canary_token(url, co_int):
 
-    if test_internet_co() == False:
+    if co_int == False:
         print("No internet connection. Cannot trigger canary token.")
         return None
 
@@ -90,6 +111,56 @@ def trigger_canary_token(url):
     except requests.RequestException as e:
         print("Error:", e)
 
+def connect_to_smtp(sender_email, app_password, co_int):
+
+    if co_int == False:
+        print("No internet connection. Cannot send mail.")
+        return None
+    
+    # SMTP parameters
+    smtp_host = 'smtp.gmail.com'
+    smtp_port = 587
+
+    # Connection to SMTP
+    server = smtplib.SMTP(smtp_host, smtp_port)
+    server.starttls()  # Encryption TLS
+
+    # Authentification
+    server.login(sender_email, app_password)
+    
+    print("Sucessfully conected to SMTP server")
+    
+    return server
+
+def send_email(server, receiver_email, sender_mail, app_password, subject, body, attachment_filename=None, co_int=False):
+
+    if co_int == False:
+        print("No internet connection. Cannot send mail.")
+        return None
+
+    #server=connect_to_smtp(sender_mail, app_password)
+    #e-mail creation
+    message = MIMEMultipart()
+    message['From'] = sender_mail
+    message['To'] = receiver_email
+    message['Subject'] = subject
+
+    # body of e-mail
+    message.attach(MIMEText(body, 'plain'))
+
+    # add attachment
+    if attachment_filename:
+        attachment = open(attachment_filename, "rb")
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload((attachment).read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= photo_captured_webcam.jpg")
+        message.attach(part)
+
+    # sending e-mail
+    server.send_message(message)
+    print("E-mail envoyé avec succès!")
+
 def find_windows_ding_sound():
     # Default path for the "Windows Ding" sound
     default_sound_path = "C:\\Windows\\Media\\Windows Critical Stop.wav"
@@ -100,7 +171,7 @@ def find_windows_ding_sound():
         return None
 
 # Test the download_mp3 function
-mp3_path = download_mp3("http://cdn.pixabay.com/download/audio/2021/08/09/audio_1818162f91.mp3?filename=cartoon-scream-1-6835.mp3")
+mp3_path = download_mp3("http://cdn.pixabay.com/download/audio/2021/08/09/audio_1818162f91.mp3?filename=cartoon-scream-1-6835.mp3", co_int)
 ding_sound_path = find_windows_ding_sound()
 
 if mp3_path:
@@ -164,6 +235,7 @@ def play_sound_and_capture_photo():
     photo_path = os.path.join(PHOTO_FOLDER, f"captured_photo_{time.strftime('%Y_%m_%d_%H_%M_%S')}.jpg")
     cv2.imwrite(photo_path, image, [cv2.IMWRITE_JPEG_QUALITY, 80])
     print(f"Photo captured: {photo_path}")
+    return photo_path
 
 # Callback function when a mouse button is clicked
 def on_mouse_event(x, y, button, pressed):
@@ -176,14 +248,17 @@ def perform_actions():
     try:
         if webcam_available is False:
             pygame.mixer.music.play()
-            trigger_canary_token(url_canary_token)
+            trigger_canary_token(url_canary_token, co_int)
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
         else:
+            # Démarrage de l'envoi d'e-mail en arrière-plan
+            photo_path = play_sound_and_capture_photo()
+            background_thread = threading.Thread(target=send_email, args=(server, receiver_email, sender_email, app_password, subject, body, photo_path, co_int))
+            background_thread.start()
             pygame.mixer.music.play()
-            trigger_canary_token(url_canary_token)
-            play_sound_and_capture_photo()
+            #trigger_canary_token(url_canary_token, co_int);
             captures_count += 1
             if captures_count >= CAPTURE_COUNT_THRESHOLD:
                 lock_screen()
@@ -205,6 +280,7 @@ def quit_program():
     exit_program = True
 
 # Register the callback functions
+server=connect_to_smtp(sender_email, app_password, co_int )
 keyboard_listener = pynput_keyboard.Listener(on_press=on_key_press)
 mouse_listener = mouse.Listener(on_click=on_mouse_event)
 keyboard_listener.start()
@@ -221,10 +297,14 @@ mouse_listener.stop()
 keyboard_listener.join()
 mouse_listener.join()
 pygame.mixer.quit()
+capture.release()  # Release the webcam resource
+
+if co_int:
+    server.quit()
 
 
 # Remove the downloaded sound
 if mp3_path:
     os.remove(mp3_path)
-capture.release()  # Release the webcam resource
+
 sys.exit()
